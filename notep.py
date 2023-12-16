@@ -121,11 +121,14 @@ class App(QMainWindow):
 
         self.setStatusBar(self.statusBar)
 
+        # Connect the textChanged signal to the update_status_bar method
         self.text.textChanged.connect(self.update_status_bar)
 
+        # Set initial status bar text
         self.update_status_bar()
 
     def add_font_actions_to_menu(self):
+        # Add font actions to the context menu
         font_list = ["Arial", "Times New Roman", "Courier New", "Verdana", "Serif", "Sans Serif", "Monospace", "Cursive", "Fantasy"]
         for font_name in font_list:
             action = QAction(font_name, self)
@@ -138,7 +141,7 @@ class App(QMainWindow):
 
         if selected_text:
             char_format = QTextCharFormat()
-            char_format.setFont(QFont(font_name, 12))  
+            char_format.setFont(QFont(font_name, 12))  # You can adjust the font size as needed
             cursor.mergeCharFormat(char_format)
 
     def mousePressEvent(self, event):
