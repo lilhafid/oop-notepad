@@ -1,4 +1,5 @@
 import sys
+import mysql.connector
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog, QAction, QMenu, QFontDialog, QShortcut
 from PyQt5.QtGui import QKeySequence, QFont
 from PyQt5.QtCore import Qt
@@ -13,6 +14,8 @@ class App(QMainWindow):
         self.text = QTextEdit(self)
         self.text.setFont(QFont("Consolas", 12))
         self.setCentralWidget(self.text)
+
+        self.connectd()
 
         menubar = self.menuBar()
 
@@ -53,14 +56,32 @@ class App(QMainWindow):
         font_type_action.triggered.connect(self.choose_font)
         font_menu.addAction(font_type_action)
 
-        # Bind Ctrl+N, Ctrl+O, Ctrl+S to corresponding methods
         new_action.setShortcut(QKeySequence.New)
         open_action.setShortcut(QKeySequence.Open)
         save_action.setShortcut(QKeySequence.Save)
 
-        # Create a shortcut for Ctrl+A to trigger the select_all method
         shortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_A), self)
         shortcut.activated.connect(self.select_all)
+
+    def connectd(self):
+        self.connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="history"
+        )
+        self.cursor = self.connection.cursor()
+
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS file_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            filename VARCHAR(255),
+            content TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+        self.cursor.execute(create_table_query)
+        self.connection.commit()
 
     def new_file(self):
         self.text.clear()
@@ -76,7 +97,6 @@ class App(QMainWindow):
                     self.text.insertPlainText(contents)
                 self.setWindowTitle(f"{filename} - Notepad")
             except Exception as e:
-                # Handle any potential exceptions when reading the file
                 print(f"An error occurred while opening the file:\n{str(e)}")
 
     def save_file(self):
@@ -86,6 +106,15 @@ class App(QMainWindow):
                 contents = self.text.toPlainText()
                 file.write(contents)
             self.setWindowTitle(f"{filename} - Notepad")
+
+            # Save file history to the database
+            self.save_history_to_database(filename, contents)
+
+    def save_history_to_database(self, filename, contents):
+        insert_query = "INSERT INTO file_history (filename, content) VALUES (%s, %s)"
+        data = (filename, contents)
+        self.cursor.execute(insert_query, data)
+        self.connection.commit()
 
     def cut(self):
         self.text.cut()
@@ -103,6 +132,10 @@ class App(QMainWindow):
         font, ok = QFontDialog.getFont()
         if ok:
             self.text.setFont(font)
+
+    def closeEvent(self, event):
+        self.connection.close()
+        event.accept()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
