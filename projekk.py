@@ -1,7 +1,7 @@
 import sys
 import mysql.connector
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog, QAction, QMenu, QFontDialog, QShortcut, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QDialogButtonBox
-from PyQt5.QtGui import QKeySequence, QFont, QImage, QTextDocumentFragment, QTextCharFormat, QColor
+from PyQt5.QtGui import QKeySequence, QFont, QImage, QTextDocumentFragment, QTextCharFormat, QColor, QTextCursor
 from PyQt5.QtCore import Qt
 
 class ImageResizeDialog(QDialog):
@@ -47,7 +47,7 @@ class App(QMainWindow):
         self.setCentralWidget(self.text)
 
         self.open_recent_menu = None
-        self.context_menu = QMenu(self)  # Initialize context_menu here
+        self.context_menu = QMenu(self)  
 
         self.connectd()
 
@@ -75,7 +75,37 @@ class App(QMainWindow):
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
 
+        edit_menu = menubar.addMenu("Alignment")
+
+
+        align_left_action = QAction("Align Left", self)
+        align_left_action.triggered.connect(lambda: self.set_alignment(Qt.AlignLeft))
+        edit_menu.addAction(align_left_action)
+
+        align_center_action = QAction("Align Center", self)
+        align_center_action.triggered.connect(lambda: self.set_alignment(Qt.AlignHCenter))
+        edit_menu.addAction(align_center_action)
+
+        align_right_action = QAction("Align Right", self)
+        align_right_action.triggered.connect(lambda: self.set_alignment(Qt.AlignRight))
+        edit_menu.addAction(align_right_action)
+
+        align_justify_action = QAction("Justify", self)
+        align_justify_action.triggered.connect(lambda: self.set_alignment(Qt.AlignJustify))
+        edit_menu.addAction(align_justify_action)
+
+        increase_indent_action = QAction("Increase Indent", self)
+        increase_indent_action.triggered.connect(self.increase_indent)
+        edit_menu.addAction(increase_indent_action)
+
+        decrease_indent_action = QAction("Decrease Indent", self)
+        decrease_indent_action.triggered.connect(self.decrease_indent)
+        edit_menu.addAction(decrease_indent_action)
+
+        file_menu.addSeparator()
+
         edit_menu = menubar.addMenu("Edit")
+
 
         cut_action = QAction("Cut", self)
         cut_action.triggered.connect(self.cut)
@@ -124,6 +154,27 @@ class App(QMainWindow):
         self.text.textChanged.connect(self.update_status_bar)
 
         self.update_status_bar()
+
+
+    def set_alignment(self, alignment):
+        cursor = self.text.textCursor()
+        block_format = cursor.blockFormat()
+        block_format.setAlignment(alignment)
+        cursor.setBlockFormat(block_format)
+
+    def increase_indent(self):
+        cursor = self.text.textCursor()
+        cursor.insertText("\t")
+
+    def decrease_indent(self):
+        cursor = self.text.textCursor()
+        cursor.movePosition(QTextCursor.StartOfBlock)
+        cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 1)
+        selected_text = cursor.selectedText()
+        if selected_text == "\t":
+            cursor.removeSelectedText()
+
+
 
     def add_font_actions_to_menu(self):
         font_list = ["Arial", "Times New Roman", "Courier New", "Verdana", "Serif", "Sans Serif", "Monospace", "Cursive", "Fantasy"]
