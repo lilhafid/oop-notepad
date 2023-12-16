@@ -15,6 +15,7 @@ class App(QMainWindow):
         self.text.setFont(QFont("Consolas", 12))
         self.setCentralWidget(self.text)
 
+        self.open_recent_menu = None 
         self.connectd()
 
         menubar = self.menuBar()
@@ -27,6 +28,9 @@ class App(QMainWindow):
         open_action = QAction("Open", self)
         open_action.triggered.connect(self.open_file)
         file_menu.addAction(open_action)
+
+        self.open_recent_menu = QMenu("Open Recent", self)  # Moved this line from update_open_recent_menu
+        file_menu.addMenu(self.open_recent_menu)  # Moved this line from update_open_recent_menu
 
         save_action = QAction("Save", self)
         save_action.triggered.connect(self.save_file)
@@ -116,6 +120,16 @@ class App(QMainWindow):
         self.cursor.execute(insert_query, data)
         self.connection.commit()
 
+    def open_recent_file(self, filename):
+        try:
+            with open(filename, 'r', encoding='utf-8') as file:
+                contents = file.read()
+                self.text.clear()
+                self.text.insertPlainText(contents)
+            self.setWindowTitle(f"{filename} - Notepad")
+        except Exception as e:
+            print(f"An error occurred while opening the file:\n{str(e)}")
+
     def cut(self):
         self.text.cut()
 
@@ -137,8 +151,25 @@ class App(QMainWindow):
         self.connection.close()
         event.accept()
 
+    def update_open_recent_menu(self):
+        self.open_recent_menu.clear()
+
+        select_query = "SELECT filename FROM file_history ORDER BY timestamp DESC LIMIT 5"
+        self.cursor.execute(select_query)
+        recent_files = self.cursor.fetchall()
+
+        for recent_file in recent_files:
+            filename = recent_file[0]
+            action = QAction(filename, self)
+            action.triggered.connect(lambda _, filename=filename: self.open_recent_file(filename))
+            self.open_recent_menu.addAction(action)
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     mainWin = App()
     mainWin.show()
+
+    mainWin.update_open_recent_menu()
+
     sys.exit(app.exec_())
