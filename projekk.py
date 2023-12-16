@@ -3,6 +3,8 @@ import mysql.connector
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog, QAction, QMenu, QFontDialog, QShortcut, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QDialogButtonBox
 from PyQt5.QtGui import QKeySequence, QFont, QImage, QTextDocumentFragment, QTextCharFormat, QColor, QTextCursor
 from PyQt5.QtCore import Qt
+from reportlab.pdfgen import canvas
+from docx import Document
 
 class ImageResizeDialog(QDialog):
     def __init__(self, parent=None):
@@ -57,6 +59,14 @@ class App(QMainWindow):
         new_action = QAction("New", self)
         new_action.triggered.connect(self.new_file)
         file_menu.addAction(new_action)
+
+        save_as_pdf_action = QAction("Save as PDF", self)
+        save_as_pdf_action.triggered.connect(self.save_as_pdf)
+        file_menu.addAction(save_as_pdf_action)
+
+        save_as_docx_action = QAction("Save as DOCX", self)
+        save_as_docx_action.triggered.connect(self.save_as_docx)
+        file_menu.addAction(save_as_docx_action)
 
         open_action = QAction("Open", self)
         open_action.triggered.connect(self.open_file)
@@ -155,6 +165,30 @@ class App(QMainWindow):
 
         self.update_status_bar()
 
+
+    def save_as_pdf(self):
+        filename, _ = QFileDialog.getSaveFileName(self, "Save as PDF", "", "PDF Files (*.pdf);;All Files (*)")
+        if filename:
+            try:
+                pdf_canvas = canvas.Canvas(filename)
+                pdf_canvas.setFont("Helvetica", 12)  # You can change the font and size
+                pdf_canvas.drawString(72, 800, self.text.toPlainText())
+                pdf_canvas.save()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"An error occurred while saving as PDF:\n{str(e)}")
+
+    def save_as_docx(self):
+        filename, _ = QFileDialog.getSaveFileName(self, "Save as DOCX", "", "Word Documents (*.docx);;All Files (*)")
+        if filename:
+            try:
+                if not filename.lower().endswith(".docx"):
+                    filename += ".docx"
+
+                document = Document()
+                document.add_paragraph(self.text.toPlainText())
+                document.save(filename)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"An error occurred while saving as DOCX:\n{str(e)}")
 
     def set_alignment(self, alignment):
         cursor = self.text.textCursor()
