@@ -1,10 +1,51 @@
 import sys
 import mysql.connector
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog, QAction, QMenu, QFontDialog, QShortcut, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QDialogButtonBox
-from PyQt5.QtGui import QKeySequence, QFont, QImage, QTextDocumentFragment, QTextCharFormat, QColor, QTextCursor
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog, QAction, QMenu, QFontDialog, QShortcut, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QDialogButtonBox, QSpinBox, QSlider, QComboBox
+from PyQt5.QtGui import QKeySequence, QFont, QImage, QTextDocumentFragment, QTextCharFormat, QColor, QTextCursor, QTextCursor, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextBlockFormat
 from PyQt5.QtCore import Qt
 from reportlab.pdfgen import canvas
-from docx import Document
+import docx as Document
+
+class FormatSettingsDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Format Settings")
+        self.setGeometry(300, 300, 300, 150)
+
+        layout = QVBoxLayout()
+
+        self.line_spacing_label = QLabel("Line Spacing:")
+        self.line_spacing_spinbox = QSpinBox()
+        self.line_spacing_spinbox.setRange(100, 300)
+        self.line_spacing_spinbox.setValue(150)
+
+        self.paragraph_spacing_label = QLabel("Paragraph Spacing:")
+        self.paragraph_spacing_slider = QSlider(Qt.Horizontal)
+        self.paragraph_spacing_slider.setRange(0, 20)
+        self.paragraph_spacing_slider.setValue(10)
+
+        self.font_size_label = QLabel("Font Size:")
+        self.font_size_combobox = QComboBox()
+        # Tambahkan pilihan ukuran font ke dalam ComboBox
+        self.font_size_combobox.addItems(["8", "10", "12", "14", "16", "18", "20"])
+
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+
+        layout.addWidget(self.line_spacing_label)
+        layout.addWidget(self.line_spacing_spinbox)
+        layout.addWidget(self.paragraph_spacing_label)
+        layout.addWidget(self.paragraph_spacing_slider)
+        layout.addWidget(button_box)
+
+        self.setLayout(layout)
+
+    def get_format_settings(self):
+        line_spacing = self.line_spacing_spinbox.value()
+        paragraph_spacing = self.paragraph_spacing_slider.value()
+        return line_spacing, paragraph_spacing
 
 class ImageResizeDialog(QDialog):
     def __init__(self, parent=None):
@@ -59,6 +100,14 @@ class App(QMainWindow):
         new_action = QAction("New", self)
         new_action.triggered.connect(self.new_file)
         file_menu.addAction(new_action)
+
+        format_settings_action = QAction("Format Settings", self)
+        format_settings_action.triggered.connect(self.show_format_settings_dialog)
+
+        edit_menu = menubar.addMenu("spacing")
+
+        # Tambahkan aksi ini ke dalam menu Edit atau menu lain yang sesuai
+        edit_menu.addAction(format_settings_action)
 
         save_as_pdf_action = QAction("Save as PDF", self)
         save_as_pdf_action.triggered.connect(self.save_as_pdf)
@@ -165,6 +214,29 @@ class App(QMainWindow):
 
         self.update_status_bar()
 
+    def show_format_settings_dialog(self):
+        dialog = FormatSettingsDialog(self)
+        result = dialog.exec_()
+        if result == QDialog.Accepted:
+            line_spacing, paragraph_spacing = dialog.get_format_settings()
+            self.set_text_formatting(line_spacing, paragraph_spacing)
+
+    def set_text_formatting(self, line_spacing, paragraph_spacing):
+        cursor = self.text.textCursor()
+        block_format = cursor.blockFormat()
+
+        block_format.setLineHeight(line_spacing, QTextBlockFormat.ProportionalHeight)
+        block_format.setBottomMargin(paragraph_spacing)
+        block_format.setTopMargin(paragraph_spacing)
+
+        cursor.setBlockFormat(block_format)
+        self.text.setTextCursor(cursor)
+
+        char_format = cursor.charFormat()
+        char_format.setFontPointSize('font_size')
+        cursor.setCharFormat(char_format)
+
+        self.text.setTextCursor(cursor)
 
     def save_as_pdf(self):
         filename, _ = QFileDialog.getSaveFileName(self, "Save as PDF", "", "PDF Files (*.pdf);;All Files (*)")
@@ -397,4 +469,3 @@ if __name__ == "__main__":
     mainWin.update_open_recent_menu() 
     mainWin.show()
     sys.exit(app.exec_())
-
