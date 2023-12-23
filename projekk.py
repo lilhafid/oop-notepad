@@ -1,7 +1,7 @@
 import sys
 import mysql.connector
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog, QAction, QMenu, QFontDialog, QShortcut, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QDialogButtonBox, QSpinBox, QSlider, QComboBox
-from PyQt5.QtGui import QKeySequence, QFont, QImage, QTextDocumentFragment, QTextCharFormat, QColor, QTextCursor, QTextCursor, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextBlockFormat
+from PyQt5.QtGui import QKeySequence, QFont, QImage, QTextDocumentFragment, QTextCharFormat, QColor, QTextCursor, QTextCursor, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextBlockFormat, QTextListFormat
 from PyQt5.QtCore import Qt
 from reportlab.pdfgen import canvas
 import docx as Document
@@ -106,7 +106,6 @@ class App(QMainWindow):
 
         edit_menu = menubar.addMenu("spacing")
 
-        # Tambahkan aksi ini ke dalam menu Edit atau menu lain yang sesuai
         edit_menu.addAction(format_settings_action)
 
         save_as_pdf_action = QAction("Save as PDF", self)
@@ -202,17 +201,34 @@ class App(QMainWindow):
         shortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_A), self)
         shortcut.activated.connect(self.select_all)
 
-        # Add a context menu for changing font of selected word
         self.add_font_actions_to_menu()
-
-        # Add a status bar at the bottom
         self.statusBar = self.statusBar()
-
         self.setStatusBar(self.statusBar)
-
         self.text.textChanged.connect(self.update_status_bar)
 
+        list_menu = menubar.addMenu("List")
+
+        bulleted_list_action = QAction("Bulleted List", self)
+        bulleted_list_action.triggered.connect(lambda: self.set_list_style(QTextListFormat.ListDisc))
+        list_menu.addAction(bulleted_list_action)
+
+        numbered_list_action = QAction("Numbered List", self)
+        numbered_list_action.triggered.connect(lambda: self.set_list_style(QTextListFormat.ListDecimal))
+        list_menu.addAction(numbered_list_action)
+
+
         self.update_status_bar()
+
+
+    def set_list_style(self, list_style):
+     cursor = self.text.textCursor()
+     block_format = cursor.blockFormat()
+
+     list_format = QTextListFormat()
+     list_format.setStyle(list_style)
+
+     cursor.mergeBlockFormat(block_format)
+     cursor.createList(list_format)
 
     def show_format_settings_dialog(self):
         dialog = FormatSettingsDialog(self)
