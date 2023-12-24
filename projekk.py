@@ -1,6 +1,6 @@
 import sys
 import mysql.connector
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog, QAction, QMenu, QFontDialog, QShortcut, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QDialogButtonBox, QSpinBox, QSlider, QComboBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog, QAction, QMenu, QFontDialog, QShortcut, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QDialogButtonBox, QSpinBox, QSlider, QComboBox, QInputDialog, QColorDialog
 from PyQt5.QtGui import QKeySequence, QFont, QImage, QTextDocumentFragment, QTextCharFormat, QColor, QTextCursor, QTextCursor, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextBlockFormat, QTextListFormat
 from PyQt5.QtCore import Qt
 from reportlab.pdfgen import canvas
@@ -101,10 +101,11 @@ class App(QMainWindow):
         new_action.triggered.connect(self.new_file)
         file_menu.addAction(new_action)
 
+
         format_settings_action = QAction("Format Settings", self)
         format_settings_action.triggered.connect(self.show_format_settings_dialog)
 
-        edit_menu = menubar.addMenu("spacing")
+        edit_menu = menubar.addMenu("Spacing")
 
         edit_menu.addAction(format_settings_action)
 
@@ -126,6 +127,11 @@ class App(QMainWindow):
         save_action = QAction("Save", self)
         save_action.triggered.connect(self.save_file)
         file_menu.addAction(save_action)
+
+        change_background_color_action = QAction("Change Background Color", self)
+        change_background_color_action.triggered.connect(self.change_background_color)
+        file_menu.addAction(change_background_color_action)
+
 
         file_menu.addSeparator()
 
@@ -193,7 +199,7 @@ class App(QMainWindow):
         font_type_action = QAction("Font Type", self)
         font_type_action.triggered.connect(self.choose_font)
         font_menu.addAction(font_type_action)
-
+        
         new_action.setShortcut(QKeySequence.New)
         open_action.setShortcut(QKeySequence.Open)
         save_action.setShortcut(QKeySequence.Save)
@@ -206,6 +212,7 @@ class App(QMainWindow):
         self.setStatusBar(self.statusBar)
         self.text.textChanged.connect(self.update_status_bar)
 
+        
         list_menu = menubar.addMenu("List")
 
         bulleted_list_action = QAction("Bulleted List", self)
@@ -219,6 +226,17 @@ class App(QMainWindow):
 
         self.update_status_bar()
 
+    def change_background_color(self):
+     color = QColorDialog.getColor(self.palette().color(self.backgroundRole()), self, "Select Background Color")
+     if color.isValid():
+        self.set_background_color(color)
+
+    def set_background_color(self, color):
+     palette = self.palette()
+     palette.setColor(self.backgroundRole(), color)
+     self.setPalette(palette)
+
+    
 
     def set_list_style(self, list_style):
      cursor = self.text.textCursor()
@@ -231,11 +249,12 @@ class App(QMainWindow):
      cursor.createList(list_format)
 
     def show_format_settings_dialog(self):
-        dialog = FormatSettingsDialog(self)
-        result = dialog.exec_()
-        if result == QDialog.Accepted:
-            line_spacing, paragraph_spacing = dialog.get_format_settings()
-            self.set_text_formatting(line_spacing, paragraph_spacing)
+     dialog = FormatSettingsDialog(self)
+     result = dialog.exec_()
+     if result == QDialog.Accepted:
+        line_spacing, paragraph_spacing, background_color = dialog.get_format_settings()
+        self.set_text_formatting(line_spacing, paragraph_spacing)
+        self.set_background_color(background_color)
 
     def set_text_formatting(self, line_spacing, paragraph_spacing):
         cursor = self.text.textCursor()
