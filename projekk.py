@@ -169,7 +169,22 @@ class App(QMainWindow):
         file_menu.addSeparator()
 
         edit_menu = menubar.addMenu("Edit")
+        
 
+        emoji_submenu = QMenu("Insert Emoji", self)  # Tambahkan ini
+        edit_menu.addMenu(emoji_submenu)  # Tambahkan ini
+
+        insert_emoji_action = QAction("Insert Emoji", self)
+        insert_emoji_action.triggered.connect(self.show_emoji_dialog)
+        emoji_submenu.addAction(insert_emoji_action)
+
+        # Tambahkan symbol
+        symbol_submenu = QMenu("Insert Symbol", self)  # Tambahkan ini
+        edit_menu.addMenu(symbol_submenu)  # Tambahkan ini
+
+        insert_symbol_action = QAction("Insert Symbol", self)
+        insert_symbol_action.triggered.connect(self.show_symbol_dialog)
+        symbol_submenu.addAction(insert_symbol_action)
 
         cut_action = QAction("Cut", self)
         cut_action.triggered.connect(self.cut)
@@ -194,6 +209,7 @@ class App(QMainWindow):
         insert_image_action = QAction("Insert Image", self)
         insert_image_action.triggered.connect(self.insert_image)
         edit_menu.addAction(insert_image_action)
+        
 
         font_menu = menubar.addMenu("Font")
         font_type_action = QAction("Font Type", self)
@@ -225,6 +241,20 @@ class App(QMainWindow):
 
 
         self.update_status_bar()
+
+    def show_symbol_dialog(self):
+        symbol_list = ["©", "®", "™", "€", "£", "¥", "§"]  
+        symbol, ok = QInputDialog.getItem(self, "Insert Symbol", "Select a symbol:", symbol_list, 0, False)
+        if ok and symbol:
+            cursor = self.text.textCursor()
+            cursor.insertText(symbol)
+
+    def show_emoji_dialog(self):
+        emoji_list = ["😊", "😍", "👍", "🎉", "❤️", "🚀"]  
+        emoji, ok = QInputDialog.getItem(self, "Insert Emoji", "Select an emoji:", emoji_list, 0, False)
+        if ok and emoji:
+            cursor = self.text.textCursor()
+            cursor.insertText(emoji)
 
     def change_background_color(self):
      color = QColorDialog.getColor(self.palette().color(self.backgroundRole()), self, "Select Background Color")
@@ -349,14 +379,11 @@ class App(QMainWindow):
         cursor.mergeCharFormat(QTextCharFormat().setFontUnderline(True))
 
     def update_status_bar(self):
-        # Get the text from the QTextEdit
         text = self.text.toPlainText()
 
-        # Count words and spaces
         word_count = len(text.split())
         space_count = text.count(' ')
 
-        # Set the status bar text
         status_text = f"Words: {word_count}, Spaces: {space_count}"
         self.statusBar.showMessage(status_text)
 
